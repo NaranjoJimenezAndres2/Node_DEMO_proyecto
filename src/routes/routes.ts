@@ -2,9 +2,6 @@ import {Request, Response, Router } from 'express'
 import { Users } from '../model/userSchema'
 import { db } from '../database/database'
 
-const { v1: uuidv1 } = require('uuid')
-const bcyrpt = require('bcrypt')
-const jwt = require('jsonwebtoken')
 
 class DatoRoutes {
     private _router: Router
@@ -17,7 +14,14 @@ class DatoRoutes {
     }
 
 
+
+
+
     private postUser = async (req: Request, res: Response) => {
+
+        const { v1: uuidv1 } = require('uuid')
+        const bcyrpt = require('bcrypt')
+        const jwt = require('jsonwebtoken')
 
         const hashedPassword = await bcyrpt.hash(req.body._password, 10)
         const sanitizedEmail = req.body._email.toLowerCase()
@@ -67,6 +71,9 @@ class DatoRoutes {
 
     private loginUser = async (req: Request, res: Response) => {
 
+        const bcyrpt = require('bcrypt')
+        const jwt = require('jsonwebtoken')
+
         const { email, password } = req.body
         
         console.log(email)
@@ -98,17 +105,6 @@ class DatoRoutes {
             )
         db.desconectarBD()
     }
-
-
-
-
-
-
-
-
-
-
-
 
     misRutas(){
         this._router.post('/user', this.postUser)
