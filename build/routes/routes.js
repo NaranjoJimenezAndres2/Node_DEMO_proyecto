@@ -11,20 +11,74 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.routes = void 0;
 const express_1 = require("express");
-const autos_1 = require("../model/autos");
+const userSchema_1 = require("../model/userSchema");
 const database_1 = require("../database/database");
+const { v1: uuidv1 } = require('uuid');
+const bcyrpt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 class DatoRoutes {
     constructor() {
-        this.getAutos = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            yield database_1.db.conectarBD()
-                .then((mensaje) => __awaiter(this, void 0, void 0, function* () {
-                console.log(mensaje);
-                const query = yield autos_1.Autos.find({});
-                res.json(query);
-            }))
-                .catch((mensaje) => {
-                res.send(mensaje);
+        this.postUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const hashedPassword = yield bcyrpt.hash(req.body._password, 10);
+            const sanitizedEmail = req.body._email.toLowerCase();
+            let user = new userSchema_1.Users({
+                _userId: uuidv1(),
+                _nombre: req.body._nombre,
+                _password: hashedPassword,
+                _email: sanitizedEmail,
+                _fechaNacimiento: req.body._fechaNacimiento,
+                _fechaRegistro: req.body._fechaRegistro
             });
+            console.log(user);
+            //comprobar si el email ya existe en la base de datos
+            yield database_1.db.conectarBD();
+            const emailExist = yield userSchema_1.Users.findOne({ _email: sanitizedEmail });
+            if (emailExist) {
+                res.send("duplicado");
+            }
+            else {
+                const userSaved = yield user.save();
+                //.then(() => {
+                if (userSaved) {
+                    /*    const token = jwt.sign({ userSaved}, 'secretkey', {expiresIn: 60*24})
+        
+                        res.json(token)*/
+                }
+                else {
+                    res.send('error');
+                }
+                //})
+                /*.catch((err: any) => {
+                    res.send('error')
+                })*/
+            }
+            database_1.db.desconectarBD();
+        });
+        this.loginUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { email, password } = req.body;
+            console.log(email);
+            const sanitizedEmail = email.toLowerCase();
+            //const hashedPassword = await bcyrpt.hash(password, 10)
+            yield database_1.db.conectarBD()
+                .then(() => __awaiter(this, void 0, void 0, function* () {
+                const user = yield userSchema_1.Users.findOne({ _email: sanitizedEmail });
+                console.log(user);
+                if (user) {
+                    console.log("entro");
+                    const isPasswordValid = yield bcyrpt.compare(password, user._password);
+                    console.log(isPasswordValid);
+                    if (isPasswordValid) {
+                        const token = jwt.sign({ user }, ' secretkey', { expiresIn: 60 * 24 });
+                        res.json({ token });
+                    }
+                    else {
+                        res.send('error');
+                    }
+                }
+                else {
+                    res.send('error');
+                }
+            }));
             database_1.db.desconectarBD();
         });
         this._router = (0, express_1.Router)();
@@ -33,7 +87,8 @@ class DatoRoutes {
         return this._router;
     }
     misRutas() {
-        this._router.get('/autos', this.getAutos);
+        this._router.post('/user', this.postUser);
+        this._router.post('/loginUser', this.loginUser);
     }
 }
 const obj = new DatoRoutes();
