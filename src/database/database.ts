@@ -1,9 +1,11 @@
 import mongoose from 'mongoose';
+require('dotenv').config()
+
 
 class DataBase {
 
     private _cadenaConexion2: string = 'mongodb://localhost/test'
-    private _cadenaConexion:string= `mongodb+srv://empresa:0000@cluster0.oxux9.mongodb.net/proyecto?retryWrites=true&w=majority`
+    private _cadenaConexion:string= `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster0.oxux9.mongodb.net/proyecto?retryWrites=true&w=majority`
     constructor(){
 
     }

@@ -1,6 +1,9 @@
 import {Request, Response, Router } from 'express'
 import { Users } from '../model/userSchema'
+import { Races } from '../model/racesSchema'
 import { db } from '../database/database'
+import { verifyToken } from '../middleware/authtoken'
+
 
 
 class DatoRoutes {
@@ -12,6 +15,7 @@ class DatoRoutes {
     get router(){
         return this._router
     }
+
 
 
 
@@ -49,11 +53,8 @@ class DatoRoutes {
             else{
                 const userSaved = await user.save()
             //.then(() => {
-                if (userSaved) {
-                
-            /*    const token = jwt.sign({ userSaved}, 'secretkey', {expiresIn: 60*24})
-
-                res.json(token)*/
+                if (userSaved) { 
+                res.send("guardado")
                 }
                 else {
                     res.send('error')
@@ -91,9 +92,9 @@ class DatoRoutes {
                 const isPasswordValid = await bcyrpt.compare(password, user._password)
                 console.log(isPasswordValid)
                 if(isPasswordValid){
-                    const token = jwt.sign( {user}, ' secretkey',  {expiresIn: 60*24})
+                    const token = jwt.sign( {user: user._nombre}, process.env.TOKEN_SECRET,  {expiresIn: 60*24})
                 
-                res.json({token}) 
+                res.header('authorization', token).send(token)
                 }
                 else{
                     res.send('error')
@@ -106,9 +107,63 @@ class DatoRoutes {
         db.desconectarBD()
     }
 
+
+    private getCircuitos = async (req: Request, res: Response) => {
+        await db.conectarBD()
+        .then(async () => {
+            const year = parseInt(req.params.year) 
+            console.log(year)
+            const circuitos = await Races.aggregate([
+                {"$match":{
+                    "year": year
+                    }
+                },
+                {
+                    $lookup:{
+                        "localField":"circuitId",
+                    "from":"circuits",
+                    "foreignField":"circuitId",
+                    "as":"circuitDetail"
+                    }
+                },{
+                    $unwind:"$circuitDetail"
+                },   {
+                    $project:{
+                        _id:0,
+                        name: "$circuitDetail.name",
+                    }
+                }
+            
+            ])
+            console.log(circuitos)
+            res.json(circuitos)
+        
+
+    })
+}
+
+
+private capado = async (req: Request, res: Response) => {
+    
+    res.json("entra")
+}
+
+
+
+
+
+
+
+
+
+
+
+
     misRutas(){
         this._router.post('/user', this.postUser)
         this._router.post('/loginUser', this.loginUser)
+        this._router.get('/carreras/:year', this.getCircuitos)
+        this._router.get('/capado', verifyToken, this.capado)
     }
 }
 

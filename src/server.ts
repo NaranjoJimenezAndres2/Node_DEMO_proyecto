@@ -1,6 +1,7 @@
 import express from 'express'
 import morgan from 'morgan'
 import cors from 'cors'
+require ('dotenv').config()
 
 import { routes } from './routes/routes'
 
