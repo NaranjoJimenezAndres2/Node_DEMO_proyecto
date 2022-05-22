@@ -104,7 +104,10 @@ class DatoRoutes {
                 res.send('error')
             }}
             )
-        db.desconectarBD()
+        .catch((err: any) => {
+            db.desconectarBD()
+            res.send('error')
+        })
     }
 
 
@@ -139,6 +142,10 @@ class DatoRoutes {
             res.json(circuitos)
         
 
+    })
+    .catch((err: any) => {
+        db.desconectarBD()
+        res.send('error')
     })
 }
 

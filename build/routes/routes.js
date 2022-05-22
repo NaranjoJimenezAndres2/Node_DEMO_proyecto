@@ -80,8 +80,11 @@ class DatoRoutes {
                 else {
                     res.send('error');
                 }
-            }));
-            database_1.db.desconectarBD();
+            }))
+                .catch((err) => {
+                database_1.db.desconectarBD();
+                res.send('error');
+            });
         });
         this.getCircuitos = (req, res) => __awaiter(this, void 0, void 0, function* () {
             yield database_1.db.conectarBD()
@@ -111,7 +114,11 @@ class DatoRoutes {
                 ]);
                 console.log(circuitos);
                 res.json(circuitos);
-            }));
+            }))
+                .catch((err) => {
+                database_1.db.desconectarBD();
+                res.send('error');
+            });
         });
         this.capado = (req, res) => __awaiter(this, void 0, void 0, function* () {
             res.json("entra");
