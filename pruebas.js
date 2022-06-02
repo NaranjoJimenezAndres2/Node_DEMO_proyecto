@@ -1,6 +1,6 @@
 db.races.aggregate([
     {"$match":{
-        "year":2021
+        "year": 2021
         }
     },
     {
@@ -15,7 +15,8 @@ db.races.aggregate([
     },   {
         $project:{
             _id:0,
-            name: "$circuitDetail.name",
+            "name":1,
+            name2: "$circuitDetail.name",
         }
     }
 

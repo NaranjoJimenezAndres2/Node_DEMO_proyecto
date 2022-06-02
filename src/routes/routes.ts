@@ -133,7 +133,8 @@ class DatoRoutes {
                 },   {
                     $project:{
                         _id:0,
-                        name: "$circuitDetail.name",
+                        "name":1,
+                        name2: "$circuitDetail.name",
                     }
                 }
             
