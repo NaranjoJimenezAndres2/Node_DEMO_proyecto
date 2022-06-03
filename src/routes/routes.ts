@@ -1,6 +1,7 @@
 import {Request, Response, Router } from 'express'
 import { Users } from '../model/userSchema'
 import { Races } from '../model/racesSchema'
+import { Drivers } from '../model/driversSchema'
 import { db } from '../database/database'
 import { verifyToken } from '../middleware/authtoken'
 
@@ -157,6 +158,134 @@ private capado = async (req: Request, res: Response) => {
 }
 
 
+private getBoxes = async (req: Request, res: Response) => {
+    await db.conectarBD()
+    .then(async () => {
+        const year = parseInt(req.params.year)
+        const gp = req.params.gp
+        const code = req.params.code
+        const boxes = await Drivers.aggregate([
+            {
+                $match:{
+                    "code": code
+                }
+            },
+            {
+                $project:{
+                    _id:0,
+                    "code":1,
+                    "driverId":1,
+                }
+            },
+            {
+                $lookup:{
+                    "localField":"driverId",
+                    "from":"driver_standings",
+                    "foreignField":"driverId",
+                    "as":"standings"
+                }
+            },
+            {
+                $unwind:"$standings"
+            },
+            {
+                $project:{
+                    _id:0,
+                    "code":1,
+                    "driverId":1,
+                    "raceId": "$standings.raceId",
+                }
+            },
+            {
+                $lookup:{
+                    "localField":"raceId",
+                    "from":"races",
+                    "foreignField":"raceId",
+                    "as": "races"
+                }
+            },
+            {
+                $unwind: "$races"
+            },
+            {
+                $project:{
+                    _id:0,
+                    "code":1,
+                    "driverId":1,
+                    "raceId": 1,
+                    "name": "$races.name",
+                    "year": "$races.year"
+                }
+            },
+            {
+                $match: {
+                    $and:[
+                        {
+                            "name": gp,
+                            "year": year
+                        }
+                    ]
+        
+                }
+            },
+            {
+                $lookup:{
+                    "from":"pit_stops",
+                    "let":{
+                        "driverId":"$driverId",
+                        "raceId":"$raceId"
+                    },
+                    "pipeline":[
+                        {
+                            $match:{
+                                $expr:{
+                                    $and:[
+                                        {
+                                            $eq:["$driverId", "$$driverId"]
+                                        },
+                                        {
+                                            $eq:["$raceId", "$$raceId"]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "as":"pitStops"
+                }
+            },
+            {
+                $unwind: "$pitStops"
+            },
+            {
+                $project:{
+                    _id:0,
+                    "stop": "$pitStops.stop",
+                    "duration": "$pitStops.duration"
+                }
+            },
+            {
+                $sort:{
+                    "stop":1
+                }
+            },
+            {
+                $project:{
+                    _id:0,
+                    "duration": 1,
+                }
+            },
+
+        ])
+        console.log(boxes)
+        res.json(boxes)
+    })
+    .catch((err: any) => {
+        db.desconectarBD()
+        res.send('error')
+    })
+}
+
 
 
 
@@ -172,6 +301,7 @@ private capado = async (req: Request, res: Response) => {
         this._router.post('/loginUser', this.loginUser)
         this._router.get('/carreras/:year', this.getCircuitos)
         this._router.get('/capado', verifyToken, this.capado)
+        this._router.get('/boxes/:year/:gp/:code',  verifyToken, this.getBoxes)
     }
 }
 
